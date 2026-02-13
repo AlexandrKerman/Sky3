@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 
 def get_cashback_profit(data: list[dict], /, year: int, month: int):
@@ -46,3 +47,17 @@ def investment_bank(transactions: list[dict], /, month: str, limit: int, raise_z
 
 
 
+def simple_search(data: list, search: str) -> list:
+    """
+    Ищет совпадения str в data по ключам Описание и Категория
+    :param data: list - data
+    :param search: str - string for search in data
+    :return: list - list with matches
+    """
+    pattern = re.compile(search, re.IGNORECASE)
+    new_data = []
+    for i in data:
+        data_str = f'{str(i.get('Описание'))}\n{str(i.get('Категория'))}'
+        if pattern.search(data_str):
+            new_data.append(i)
+    return new_data
