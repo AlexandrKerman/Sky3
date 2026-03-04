@@ -46,8 +46,7 @@ def investment_bank(transactions: list[dict], /, month: str, limit: int, raise_z
     return total_amount
 
 
-
-def simple_search(data: list, search: str) -> list:
+def simple_search(data: list, /, search: str) -> list:
     """
     Ищет совпадения str в data по ключам Описание и Категория
     :param data: list - data
@@ -61,3 +60,39 @@ def simple_search(data: list, search: str) -> list:
         if pattern.search(data_str):
             new_data.append(i)
     return new_data
+
+
+def search_by_number(data: list, /) -> list:
+    """
+    Ищет все транзации с номерами телефона в описании
+    :param data: list - data
+    :return: list - new data with only telephone numbers
+    """
+    pattern = re.compile(r'(\+?7|8)((\s|-)?\d(\s|-)?){10}')
+    new_data = []
+    for i in data:
+        if pattern.search(str(i.get('Описание'))):
+            new_data.append(i)
+    return new_data
+
+
+def search_by_person(data: list, /) -> list:
+    """
+    Ищет все транзации с переводом физ. лицу
+    :param data: list - data
+    :return: list - new data with persons
+    """
+    pattern = re.compile(r'^\w+ \w\.?$', re.IGNORECASE)
+    new_data = []
+    for i in data:
+        if i.get('Категория') == 'Переводы':
+            if pattern.search(str(i.get('Описание'))):
+                new_data.append(i)
+    return new_data
+
+
+if __name__ == '__main__':
+    from src import utils
+
+    data = utils.get_from_xlsx('../data/operations.xlsx')
+    print(*search_by_person(data), sep='\n\n')
