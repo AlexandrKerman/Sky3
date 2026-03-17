@@ -85,7 +85,6 @@ def get_stock():
     }
     response = requests.get(url, params=payload)
     response_json = json.loads(response.text)
-    print(response_json)
     prices = [{"stock": i["symbol"], "price": i["close"]} for i in response_json["data"]]
     return prices
 
@@ -101,9 +100,7 @@ def main_view(date, data):
         "stock_prices": get_stock(),
     }
 
-    with open("txt.json", "w", encoding="utf-8") as file:
-        json.dump(json_data, file, indent=4, ensure_ascii=False)
-        file.close()
+    return json.dumps(json_data, ensure_ascii=False)
 
 
 if __name__ == "__main__":
