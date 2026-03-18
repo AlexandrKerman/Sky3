@@ -40,11 +40,15 @@ exclude = ['venv', '.venv', 'src/decorators', 'src/generators']
 [tool.black]
 line-length = 119
 exclude = '''
-(
-    /(
-    \.git
-    )/
-)
+/(
+    \.venv
+  | venv
+  | env
+  | \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \__pycache__
+)/
 '''
 
 [tool.isort]

@@ -1,5 +1,5 @@
-from datetime import datetime
 import re
+from datetime import datetime
 
 
 def get_cashback_profit(data: list[dict], /, year: int, month: int):
@@ -9,15 +9,18 @@ def get_cashback_profit(data: list[dict], /, year: int, month: int):
     :param month: int - moth to filter
     :return: list[dict] of cashback profit by period
     """
-    data = [i for i in data if i['Кэшбэк']]
-    data = [i for i in data if
-            (date := datetime.strptime(i['Дата операции'], '%d.%m.%Y %H:%M:%S')).year == year and date.month == month]
+    data = [i for i in data if i["Кэшбэк"]]
+    data = [
+        i
+        for i in data
+        if (date := datetime.strptime(i["Дата операции"], "%d.%m.%Y %H:%M:%S")).year == year and date.month == month
+    ]
 
-    cashback_categories = {category for i in data if (category := i.get('Категория'))}
+    cashback_categories = {category for i in data if (category := i.get("Категория"))}
     cashback_amount = {i: [] for i in cashback_categories}
 
     for i in data:
-        cashback_amount[i['Категория']].append(i['Кэшбэк'])
+        cashback_amount[i["Категория"]].append(i["Кэшбэк"])
     for k, v in cashback_amount.items():
         cashback_amount[k] = sum(v)
 
@@ -34,14 +37,14 @@ def investment_bank(transactions: list[dict], /, month: str, limit: int, raise_z
     """
     if limit == 0:
         if raise_zero:
-            raise ValueError('Expected non-zero value in limit')
+            raise ValueError("Expected non-zero value in limit")
         else:
             return 0
-    month = datetime.strptime(month, '%Y-%m')
+    month = datetime.strptime(month, "%Y-%m")
     total_amount = 0
     for i in transactions:
-        if datetime.strptime(i['Дата операции'], '%Y-%m-%d') <= month:
-            amount = i['Сумма операции']
+        if datetime.strptime(i["Дата операции"], "%Y-%m-%d") <= month:
+            amount = i["Сумма операции"]
             total_amount += ((amount + limit - 1) // limit) * limit - amount
     return total_amount
 
@@ -56,7 +59,7 @@ def simple_search(data: list, /, search: str) -> list:
     pattern = re.compile(search, re.IGNORECASE)
     new_data = []
     for i in data:
-        data_str = f'{str(i.get('Описание'))}\n{str(i.get('Категория'))}'
+        data_str = f"{str(i.get('Описание'))}\n{str(i.get('Категория'))}"
         if pattern.search(data_str):
             new_data.append(i)
     return new_data
@@ -68,10 +71,10 @@ def search_by_number(data: list, /) -> list:
     :param data: list - data
     :return: list - new data with only telephone numbers
     """
-    pattern = re.compile(r'(\+?7|8)((\s|-)?\d(\s|-)?){10}')
+    pattern = re.compile(r"(\+?7|8)((\s|-)?\d(\s|-)?){10}")
     new_data = []
     for i in data:
-        if pattern.search(str(i.get('Описание'))):
+        if pattern.search(str(i.get("Описание"))):
             new_data.append(i)
     return new_data
 
@@ -82,17 +85,17 @@ def search_by_person(data: list, /) -> list:
     :param data: list - data
     :return: list - new data with persons
     """
-    pattern = re.compile(r'^\w+ \w\.?$', re.IGNORECASE)
+    pattern = re.compile(r"^\w+ \w\.?$", re.IGNORECASE)
     new_data = []
     for i in data:
-        if i.get('Категория') == 'Переводы':
-            if pattern.search(str(i.get('Описание'))):
+        if i.get("Категория") == "Переводы":
+            if pattern.search(str(i.get("Описание"))):
                 new_data.append(i)
     return new_data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from src import utils
 
-    data = utils.get_from_xlsx('../data/operations.xlsx')
-    print(*search_by_person(data), sep='\n\n')
+    data = utils.get_from_xlsx("../data/operations.xlsx")
+    print(*search_by_person(data), sep="\n\n")
