@@ -177,4 +177,4 @@ def events_view(date, data, *, date_range="M"):
         "stock_prices": get_stock(),
     }
 
-    print(json.dumps(json_data, indent=2, ensure_ascii=False))
+    return json.dumps(json_data, indent=2, ensure_ascii=False)
