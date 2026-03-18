@@ -55,7 +55,6 @@ def get_rates():
 
 
 def get_stock():
-
     stocks = ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
     prices = []
 
@@ -64,7 +63,7 @@ def get_stock():
         payload = {"function": "GLOBAL_QUOTE", "symbol": i, "apikey": SPRATES_KEY}
         response = requests.get(url, params=payload)
         response_json = json.loads(response.text)
-        sleep(5)
+        print(f"Идёт запрос по API для получения {i}\n")
         if "Global Quote" in response_json and response_json["Global Quote"]:
             prices.append(
                 {
@@ -73,7 +72,9 @@ def get_stock():
                 }
             )
         else:
+            print("При получении данных произошла ошибка. Подключение к резервному API")
             break
+        sleep(5)
     else:
         return prices
 
@@ -103,8 +104,77 @@ def main_view(date, data):
     return json.dumps(json_data, ensure_ascii=False)
 
 
-if __name__ == "__main__":
-    from src import utils
+def get_expenses_data(data):
+    expenses_info = {}
+    df_expenses = data[data["Сумма операции"] < 0].copy()
 
-    data = utils.get_from_xlsx("../data/operations.xlsx")
-    main_view("2025-12-05 22:34:41", data)
+    df_expenses["Сумма операции"] = df_expenses["Сумма операции"].abs()
+    df_expenses = (
+        df_expenses.groupby("Категория").agg({"Сумма операции": "sum"}).sort_values("Сумма операции", ascending=False)
+    )
+    df_expenses = df_expenses.reset_index()
+    df_expenses.rename(columns={"Категория": "category", "Сумма операции": "amount"}, inplace=True)
+    df_expenses["amount"] = df_expenses["amount"].round(2)
+
+    expenses_info["total_amount"] = df_expenses.sum()["amount"]
+
+    first = df_expenses.loc[~df_expenses["category"].isin(["Переводы", "Наличные"])].head(7)
+    other = df_expenses.loc[~df_expenses["category"].isin(["Переводы", "Наличные"])][7:].sum()
+
+    expenses_info["main"] = first.to_dict("records")
+    if other["amount"] != 0:
+        other["amount"] = other["amount"].round(2)
+        other["category"] = "Остальное"
+        expenses_info["main"].append(other.to_dict())
+    transfers = df_expenses.loc[df_expenses["category"].isin(["Переводы", "Наличные"])]
+
+    expenses_info["transfers_and_cash"] = transfers.to_dict("records")
+
+    return expenses_info
+
+
+def get_income_data(data):
+    income_info = {}
+    df_income = data[data["Сумма операции"] > 0].copy()
+
+    df_income = (
+        df_income.groupby("Категория").agg({"Сумма операции": "sum"}).sort_values("Сумма операции", ascending=False)
+    )
+    df_income = df_income.reset_index()
+    df_income.rename(columns={"Категория": "category", "Сумма операции": "amount"}, inplace=True)
+
+    df_income["amount"] = df_income["amount"].round(2)
+    # df_expenses['amount'] = df_expenses['amount'].round(2)
+    # income_info['total_amount'] = df_income.sum().to_dict()
+    income_info["total_amount"] = df_income.sum()["amount"].round(2)
+    income_info["main"] = df_income.to_dict("records")
+    return income_info
+
+
+def events_view(date, data, *, date_range="M"):
+    df = pd.DataFrame(data)
+    # df['Дата операции'] = df['Дата операции'].apply(lambda x: datetime.datetime.strptime(x, "%d.%m.%Y %H:%M:%S"))
+    df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
+    date = datetime.datetime.strptime(date, "%d.%m.%Y")
+    match date_range:
+        case "W":
+            start_date = date - datetime.timedelta(days=date.weekday())
+            end_date = start_date + datetime.timedelta(days=6)
+            df = df.loc[(df["Дата операции"] >= start_date) & (df["Дата операции"] <= end_date)]
+        case "M":
+            df = df.loc[(df["Дата операции"].dt.month == date.month) & (df["Дата операции"].dt.year == date.year)]
+        case "Y":
+            df = df.loc[df["Дата операции"].dt.year == date.year]
+        case "ALL":
+            df = df.loc[df["Дата операции"] < date + datetime.timedelta(days=1)]
+        case _:
+            raise ValueError(f"Not supported date_range. Expected W/M/Y/ALL, got {date_range}")
+
+    json_data = {
+        "expenses": get_expenses_data(df),
+        "income": get_income_data(df),
+        "currency_rates": get_rates(),
+        "stock_prices": get_stock(),
+    }
+
+    print(json.dumps(json_data, indent=2, ensure_ascii=False))
