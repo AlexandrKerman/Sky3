@@ -7,7 +7,7 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-from src.loggers import views_logger, func_logger
+from src.loggers import func_logger, views_logger
 
 load_dotenv()
 LAYER_KEY = getenv("LAYER_KEY")
@@ -244,10 +244,3 @@ def events_view(date: str, data: list[dict], *, date_range: str = "M") -> json:
     }
 
     return json.dumps(json_data, indent=2, ensure_ascii=False)
-
-
-if __name__ == '__main__':
-    from src import utils
-    data = utils.get_from_xlsx('../data/operations.xlsx')
-    print(main_view(date='2021-12-12 22:42:21', data=data))
-    print(events_view('25.12.2021', data, date_range='W'))
