@@ -1,11 +1,12 @@
 import datetime
 import json
 from functools import wraps
+from itertools import takewhile
 
 import pandas as pd
 
 
-def save_df_return(filename='report.md'):
+def save_df_return(filename='report.txt'):
     def wrapper(func):
         @wraps(func)
         def inner(*args, **kwargs):
@@ -30,11 +31,42 @@ def get_dy_date_range(transactions: pd.DataFrame, date: datetime.datetime) -> pd
     return df
 
 
+def get_expenses(transactions: pd.DataFrame) -> pd.DataFrame:
+    transactions = transactions[transactions['Сумма операции'] < 0]
+    transactions['Сумма операции'] = transactions['Сумма операции'].abs()
+    return transactions
+
+
 @save_df_return()
 def category_spents(transactions: pd.DataFrame, category_name: str, date: str | None = None) -> pd.DataFrame:
     date = datetime.datetime.now() if not date else datetime.datetime.strptime(date, '%d.%m.%Y')
 
     df = get_dy_date_range(transactions, date)
+    df = get_expenses(df)
     df = df[df['Категория'] == category_name]
 
     return df
+
+
+@save_df_return()
+def weekly_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.DataFrame:
+    weekdays = {
+        0: 'Понедельник',
+        1: 'Вторник',
+        2: 'Среда',
+        3: 'Четверг',
+        4: 'Пятница',
+        5: 'Суббота',
+        6: 'Воскресенье',
+    }
+
+    date = datetime.datetime.now() if not date else datetime.datetime.strptime(date, '%d.%m.%Y')
+
+    df = get_dy_date_range(transactions, date)
+    df = get_expenses(df)
+
+    df['День недели'] = df['Дата операции'].apply(lambda x: weekdays[x.weekday()])
+    grouped_df = df.groupby('День недели').agg({'Сумма операции': 'sum'})
+    grouped_df.reset_index(inplace=True)
+
+    return grouped_df
