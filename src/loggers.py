@@ -12,9 +12,10 @@ def func_logger(logger: logging.Logger):
             res = func(*args, **kwargs)
             logger.info(f'{func.__name__} завершила работу')
             return res
-        return inner
-    return wrapper
 
+        return inner
+
+    return wrapper
 
 
 def create_logger(name: str, path: str = LOG_DIR) -> logging.Logger:

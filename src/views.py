@@ -122,7 +122,7 @@ def get_stock() -> list[dict] | None:
     response = requests.get(url, params=payload)
     response_json = json.loads(response.text)
     if 'data' in response_json:
-        views_logger.info(f'Данные успешно получены.')
+        views_logger.info('Данные успешно получены.')
         prices = [{"stock": i["symbol"], "price": i["close"]} for i in response_json["data"]]
         views_logger.info(f'{prices} будет возвращено')
         return prices
