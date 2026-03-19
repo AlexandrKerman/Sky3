@@ -5,6 +5,9 @@ LOG_DIR = "../logs"
 
 
 def func_logger(logger: logging.Logger):
+    '''
+    Применяет логер к функции
+    '''
     def wrapper(func):
         @wraps(func)
         def inner(*args, **kwargs):
@@ -19,6 +22,9 @@ def func_logger(logger: logging.Logger):
 
 
 def create_logger(name: str, path: str = LOG_DIR) -> logging.Logger:
+    '''
+    Создаёт логер
+    '''
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
