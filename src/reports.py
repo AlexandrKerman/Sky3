@@ -44,6 +44,7 @@ def category_spents(transactions: pd.DataFrame, category_name: str, date: str | 
     df = get_dy_date_range(transactions, date)
     df = get_expenses(df)
     df = df[df['Категория'] == category_name]
+    df['Сумма операции'] = df['Сумма операции'].round(2)
 
     return df
 
@@ -68,5 +69,25 @@ def weekly_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.Dat
     df['День недели'] = df['Дата операции'].apply(lambda x: weekdays[x.weekday()])
     grouped_df = df.groupby('День недели').agg({'Сумма операции': 'sum'})
     grouped_df.reset_index(inplace=True)
+    grouped_df['Сумма операции'] = grouped_df['Сумма операции'].round(2)
 
     return grouped_df
+
+
+@save_df_return()
+def average_spents (transactions: pd.DataFrame, date: str|None) -> pd.DataFrame:
+    date = datetime.datetime.now() if not date else datetime.datetime.strptime(date, '%d.%m.%Y')
+
+    df = get_dy_date_range(transactions, date)
+    df = get_expenses(df)
+
+    df['weekday'] = df['Дата операции'].apply(lambda x: 'Будний день' if x.weekday() <= 4 else 'Выходной день')
+
+    grouped_df = df.groupby('weekday').agg({'Сумма операции': 'mean'})
+    grouped_df.reset_index(inplace=True)
+    grouped_df['Сумма операции'] = grouped_df['Сумма операции'].round(2)
+
+
+    print(grouped_df)
+    return grouped_df
+
