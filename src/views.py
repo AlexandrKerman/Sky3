@@ -7,12 +7,15 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
+from src.loggers import views_logger, func_logger
+
 load_dotenv()
 LAYER_KEY = getenv("LAYER_KEY")
 SPRATES_KEY = getenv("SPRATES")
 SPRATES_KEY_RESERVE = getenv("SPRATES_KEY_RESERVE")
 
 
+@func_logger(views_logger)
 def get_greeting(hour: int) -> str:
     """
     Возвращает приветствие, соответствующее времени суток
@@ -21,6 +24,7 @@ def get_greeting(hour: int) -> str:
     return day_time[hour // 6]
 
 
+@func_logger(views_logger)
 def get_cards_data(data: list[dict]) -> list[dict]:
     """
     Возвращает информацию по картам.
@@ -34,6 +38,7 @@ def get_cards_data(data: list[dict]) -> list[dict]:
     return cards_info.to_dict("records")
 
 
+@func_logger(views_logger)
 def get_top_transactions(data: list[dict]) -> list[dict]:
     """
     Возвращает топ-5 транзакций по убыванию суммы
@@ -44,6 +49,7 @@ def get_top_transactions(data: list[dict]) -> list[dict]:
     return top_transactions.to_dict("records")
 
 
+@func_logger(views_logger)
 def get_rates() -> list[dict] | None:
     """
     Возвращает актуальные курсы валют
@@ -55,18 +61,25 @@ def get_rates() -> list[dict] | None:
         "base": "RUB",
     }
     try:
+        views_logger.info('Попытка обратиться по API')
         response = requests.request("GET", base_url, headers=headers, params=payload)
     except requests.exceptions.RequestException as e:
+        views_logger.error(f'При обращении была получена ошибка {e}')
         print(f"an error occurred: {e}")
     else:
+        views_logger.info('Обращение по API прошло успешно.')
         result = json.loads(response.text)
         for k, v in result["rates"].items():
             result["rates"][k] = round(1 / v, 2)
+            views_logger.info(f'Получено {k}: {round(1 / v, 2)}')
+        views_logger.info('Курс валют будет возвращён')
         return [{"currency": k, "rate": v} for k, v in result["rates"].items()]
+    views_logger.info('Возвращается None')
     return None
 
 
-def get_stock() -> list[dict]:
+@func_logger(views_logger)
+def get_stock() -> list[dict] | None:
     """
     Возвращает актуальные стоимости акций из S&P500
     """
@@ -76,6 +89,7 @@ def get_stock() -> list[dict]:
     url = "https://www.alphavantage.co/query"
     for i in stocks:
         payload = {"function": "GLOBAL_QUOTE", "symbol": i, "apikey": SPRATES_KEY}
+        views_logger.info(f'Идёт запрос по основному API для получения {i}')
         response = requests.get(url, params=payload)
         response_json = json.loads(response.text)
         print(f"Идёт запрос по API для получения {i}\n")
@@ -86,11 +100,16 @@ def get_stock() -> list[dict]:
                     "price": response_json["Global Quote"]["05. price"],
                 }
             )
+            views_logger.info(f'{i} получен. {prices[-1]} было добавлено в prices')
         else:
+            views_logger.warning('Произошла ошибка при запросе по основному запросу')
             print("При получении данных произошла ошибка. Подключение к резервному API")
             break
+        views_logger.info('Ожидание до след. запроса 5с...')
         sleep(5)
+        views_logger.info('Ожидание окончено')
     else:
+        views_logger.info(f'Возвращается {prices}')
         return prices
 
     url = "http://api.marketstack.com/v1/eod"
@@ -99,10 +118,18 @@ def get_stock() -> list[dict]:
         "symbols": ",".join(stocks),
         "limit": len(stocks),
     }
+    views_logger.info('Попытка запроса по резервному API')
     response = requests.get(url, params=payload)
     response_json = json.loads(response.text)
-    prices = [{"stock": i["symbol"], "price": i["close"]} for i in response_json["data"]]
-    return prices
+    if 'data' in response_json:
+        views_logger.info(f'Данные успешно получены.')
+        prices = [{"stock": i["symbol"], "price": i["close"]} for i in response_json["data"]]
+        views_logger.info(f'{prices} будет возвращено')
+        return prices
+    else:
+        print('Data not captured.')
+        views_logger.warning(f'Ответ на запрос пришёл с результатом {response_json}. Будет возвращено None')
+        return None
 
 
 def main_view(date: str, data: list[dict]) -> json:
@@ -127,6 +154,7 @@ def main_view(date: str, data: list[dict]) -> json:
     return json.dumps(json_data, ensure_ascii=False)
 
 
+@func_logger(views_logger)
 def get_expenses_data(data: pd.DataFrame) -> dict:
     """
     Возвращает информацию о тратах по категориям
@@ -159,6 +187,7 @@ def get_expenses_data(data: pd.DataFrame) -> dict:
     return expenses_info
 
 
+@func_logger(views_logger)
 def get_income_data(data: pd.DataFrame) -> dict:
     """
     Возвращает информацию о пополнениях по категориям
@@ -180,6 +209,7 @@ def get_income_data(data: pd.DataFrame) -> dict:
     return income_info
 
 
+@func_logger(views_logger)
 def events_view(date: str, data: list[dict], *, date_range: str = "M") -> json:
     """
     Окно События. Возвращает JSON с:
@@ -214,3 +244,10 @@ def events_view(date: str, data: list[dict], *, date_range: str = "M") -> json:
     }
 
     return json.dumps(json_data, indent=2, ensure_ascii=False)
+
+
+if __name__ == '__main__':
+    from src import utils
+    data = utils.get_from_xlsx('../data/operations.xlsx')
+    print(main_view(date='2021-12-12 22:42:21', data=data))
+    print(events_view('25.12.2021', data, date_range='W'))
