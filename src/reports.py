@@ -87,7 +87,5 @@ def average_spents (transactions: pd.DataFrame, date: str|None) -> pd.DataFrame:
     grouped_df.reset_index(inplace=True)
     grouped_df['Сумма операции'] = grouped_df['Сумма операции'].round(2)
 
-
-    print(grouped_df)
     return grouped_df
 
