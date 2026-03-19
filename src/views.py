@@ -13,18 +13,18 @@ SPRATES_KEY = getenv("SPRATES")
 SPRATES_KEY_RESERVE = getenv("SPRATES_KEY_RESERVE")
 
 
-def get_greeting(hour):
-    '''
+def get_greeting(hour: int) -> str:
+    """
     Возвращает приветствие, соответствующее времени суток
-    '''
+    """
     day_time = {0: "Доброй ночи", 1: "Доброе утро", 2: "Добрый день", 3: "Добрый вечер"}
     return day_time[hour // 6]
 
 
-def get_cards_data(data):
-    '''
+def get_cards_data(data: list[dict]) -> list[dict]:
+    """
     Возвращает информацию по картам.
-    '''
+    """
     df = pd.DataFrame(data, columns=["Номер карты", "Сумма операции", "Категория"])
     df = df[df["Сумма операции"] < 0]
     cards_info = df.groupby("Номер карты").agg({"Сумма операции": "sum"})
@@ -34,20 +34,20 @@ def get_cards_data(data):
     return cards_info.to_dict("records")
 
 
-def get_top_transactions(data):
-    '''
+def get_top_transactions(data: list[dict]) -> list[dict]:
+    """
     Возвращает топ-5 транзакций по убыванию суммы
-    '''
+    """
     df = pd.DataFrame(data, columns=["Дата операции", "Сумма операции", "Категория", "Описание"])
     df = df[df["Сумма операции"] < 0]
     top_transactions = df.sort_values("Сумма операции").head(5)
     return top_transactions.to_dict("records")
 
 
-def get_rates():
-    '''
+def get_rates() -> list[dict] | None:
+    """
     Возвращает актуальные курсы валют
-    '''
+    """
     base_url = "https://api.apilayer.com/exchangerates_data/latest"
     headers = {"apikey": LAYER_KEY}
     payload = {
@@ -66,10 +66,10 @@ def get_rates():
     return None
 
 
-def get_stock():
-    '''
+def get_stock() -> list[dict]:
+    """
     Возвращает актуальные стоимости акций из S&P500
-    '''
+    """
     stocks = ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
     prices = []
 
@@ -105,15 +105,15 @@ def get_stock():
     return prices
 
 
-def main_view(date, data):
-    '''
+def main_view(date: str, data: list[dict]) -> json:
+    """
     Окно Главная. Возвращает JSON с
     — приветствием,
     — информацией по картам,
     — Топ-5 транзакций,
     — Курс рубля к другим валютам,
     — Стомость акций из S&P500
-    '''
+    """
     date_obj = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
 
     json_data = {
@@ -127,10 +127,10 @@ def main_view(date, data):
     return json.dumps(json_data, ensure_ascii=False)
 
 
-def get_expenses_data(data):
-    '''
+def get_expenses_data(data: pd.DataFrame) -> dict:
+    """
     Возвращает информацию о тратах по категориям
-    '''
+    """
     expenses_info = {}
     df_expenses = data[data["Сумма операции"] < 0].copy()
 
@@ -159,10 +159,10 @@ def get_expenses_data(data):
     return expenses_info
 
 
-def get_income_data(data):
-    '''
+def get_income_data(data: pd.DataFrame) -> dict:
+    """
     Возвращает информацию о пополнениях по категориям
-    '''
+    """
     income_info = {}
     df_income = data[data["Сумма операции"] > 0].copy()
 
@@ -180,14 +180,14 @@ def get_income_data(data):
     return income_info
 
 
-def events_view(date, data, *, date_range="M"):
-    '''
+def events_view(date: str, data: list[dict], *, date_range: str = "M") -> json:
+    """
     Окно События. Возвращает JSON с:
     — Информацией о расходах,
     — Информацией о пополнениях,
     — Курсом валют,
     — Стоимости акций
-    '''
+    """
     df = pd.DataFrame(data)
     # df['Дата операции'] = df['Дата операции'].apply(lambda x: datetime.datetime.strptime(x, "%d.%m.%Y %H:%M:%S"))
     df["Дата операции"] = pd.to_datetime(df["Дата операции"], format="%d.%m.%Y %H:%M:%S")
