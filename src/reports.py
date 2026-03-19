@@ -3,6 +3,8 @@ from functools import wraps
 
 import pandas as pd
 
+from src.loggers import func_logger, reports_logger
+
 
 def save_df_return(filename: str = "report.txt"):
     """Сохраняет Dataframe в txt"""
@@ -20,6 +22,7 @@ def save_df_return(filename: str = "report.txt"):
     return wrapper
 
 
+@func_logger(reports_logger)
 def get_dy_date_range(transactions: pd.DataFrame, date: datetime.datetime) -> pd.DataFrame:
     """
     Формирует выборку транзакций за 3 месяца до date включительно
@@ -34,6 +37,7 @@ def get_dy_date_range(transactions: pd.DataFrame, date: datetime.datetime) -> pd
     return df
 
 
+@func_logger(reports_logger)
 def get_expenses(transactions: pd.DataFrame) -> pd.DataFrame:
     """
     Формирует выборку из отрицательных транзакций - трат
@@ -43,6 +47,7 @@ def get_expenses(transactions: pd.DataFrame) -> pd.DataFrame:
     return transactions
 
 
+@func_logger(reports_logger)
 @save_df_return()
 def category_spents(transactions: pd.DataFrame, category_name: str, date: str | None = None) -> pd.DataFrame:
     """
@@ -58,6 +63,7 @@ def category_spents(transactions: pd.DataFrame, category_name: str, date: str | 
     return df
 
 
+@func_logger(reports_logger)
 @save_df_return()
 def weekly_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.DataFrame:
     """
@@ -86,6 +92,7 @@ def weekly_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.Dat
     return grouped_df
 
 
+@func_logger(reports_logger)
 @save_df_return()
 def average_spents(transactions: pd.DataFrame, date: str | None) -> pd.DataFrame:
     """

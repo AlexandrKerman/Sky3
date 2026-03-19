@@ -1,7 +1,11 @@
 import re
 from datetime import datetime
+from venv import logger
+
+from src.loggers import func_logger, services_logger
 
 
+@func_logger(services_logger)
 def get_cashback_profit(data: list[dict], /, year: int, month: int) -> dict:
     """
     :param data: list[dict] positional only.
@@ -10,11 +14,9 @@ def get_cashback_profit(data: list[dict], /, year: int, month: int) -> dict:
     :return: list[dict] of cashback profit by period
     """
     data = [i for i in data if i["Кэшбэк"]]
-    data = [
-        i
-        for i in data
-        if (date := datetime.strptime(i["Дата операции"], "%d.%m.%Y %H:%M:%S")).year == year and date.month == month
-    ]
+    data = [i for i in data if
+            (date := datetime.strptime(i["Дата операции"], "%d.%m.%Y %H:%M:%S")).year == year and date.month == month
+            ]
 
     cashback_categories = {category for i in data if (category := i.get("Категория"))}
     cashback_amount = {i: [] for i in cashback_categories}
@@ -27,6 +29,7 @@ def get_cashback_profit(data: list[dict], /, year: int, month: int) -> dict:
     return cashback_amount
 
 
+@func_logger(services_logger)
 def investment_bank(transactions: list[dict], /, month: str, limit: int, raise_zero=True) -> float:
     """
     :param transactions: list[dict] of operations with keys 'Дата операции' and 'Сумма платежа'
@@ -36,9 +39,12 @@ def investment_bank(transactions: list[dict], /, month: str, limit: int, raise_z
     :return: float: sum of investment
     """
     if limit == 0:
+        logger.warning('limit == 0')
         if raise_zero:
+            logger.critical('Raised ValueError, because limit = 0 and raise_zero = True')
             raise ValueError("Expected non-zero value in limit")
         else:
+            logger.warning('Returned 0, because limit = 0 and raise_zero = False')
             return 0
     month = datetime.strptime(month, "%Y-%m")
     total_amount = 0
@@ -49,6 +55,7 @@ def investment_bank(transactions: list[dict], /, month: str, limit: int, raise_z
     return total_amount
 
 
+@func_logger(services_logger)
 def simple_search(data: list, /, search: str) -> list:
     """
     Ищет совпадения str в data по ключам Описание и Категория
@@ -65,6 +72,7 @@ def simple_search(data: list, /, search: str) -> list:
     return new_data
 
 
+@func_logger(services_logger)
 def search_by_number(data: list, /) -> list:
     """
     Ищет все транзации с номерами телефона в описании
@@ -79,6 +87,7 @@ def search_by_number(data: list, /) -> list:
     return new_data
 
 
+@func_logger(services_logger)
 def search_by_person(data: list, /) -> list:
     """
     Ищет все транзации с переводом физ. лицу
