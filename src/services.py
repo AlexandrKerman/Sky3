@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 
-def get_cashback_profit(data: list[dict], /, year: int, month: int):
+def get_cashback_profit(data: list[dict], /, year: int, month: int) -> dict:
     """
     :param data: list[dict] positional only.
     :param year: int - year to filter
@@ -92,10 +92,3 @@ def search_by_person(data: list, /) -> list:
             if pattern.search(str(i.get("Описание"))):
                 new_data.append(i)
     return new_data
-
-
-if __name__ == "__main__":
-    from src import utils
-
-    data = utils.get_from_xlsx("../data/operations.xlsx")
-    print(*search_by_person(data), sep="\n\n")
