@@ -3,7 +3,9 @@ from functools import wraps
 
 import pandas as pd
 
-from src.loggers import func_logger, reports_logger
+from src.loggers import create_logger, func_logger
+
+reports_logger = create_logger("reports_logger")
 
 
 def save_df_return(filename: str = "report.txt"):

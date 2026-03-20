@@ -7,12 +7,14 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-from src.loggers import func_logger, views_logger
+from src.loggers import create_logger, func_logger
 
 load_dotenv()
 LAYER_KEY = getenv("LAYER_KEY")
 SPRATES_KEY = getenv("SPRATES")
 SPRATES_KEY_RESERVE = getenv("SPRATES_KEY_RESERVE")
+
+views_logger = create_logger("view_logger")
 
 
 @func_logger(views_logger)
@@ -61,20 +63,20 @@ def get_rates() -> list[dict] | None:
         "base": "RUB",
     }
     try:
-        views_logger.info('Попытка обратиться по API')
+        views_logger.info("Попытка обратиться по API")
         response = requests.request("GET", base_url, headers=headers, params=payload)
     except requests.exceptions.RequestException as e:
-        views_logger.error(f'При обращении была получена ошибка {e}')
+        views_logger.error(f"При обращении была получена ошибка {e}")
         print(f"an error occurred: {e}")
     else:
-        views_logger.info('Обращение по API прошло успешно.')
+        views_logger.info("Обращение по API прошло успешно.")
         result = json.loads(response.text)
         for k, v in result["rates"].items():
             result["rates"][k] = round(1 / v, 2)
-            views_logger.info(f'Получено {k}: {round(1 / v, 2)}')
-        views_logger.info('Курс валют будет возвращён')
+            views_logger.info(f"Получено {k}: {round(1 / v, 2)}")
+        views_logger.info("Курс валют будет возвращён")
         return [{"currency": k, "rate": v} for k, v in result["rates"].items()]
-    views_logger.info('Возвращается None')
+    views_logger.info("Возвращается None")
     return None
 
 
@@ -89,7 +91,7 @@ def get_stock() -> list[dict] | None:
     url = "https://www.alphavantage.co/query"
     for i in stocks:
         payload = {"function": "GLOBAL_QUOTE", "symbol": i, "apikey": SPRATES_KEY}
-        views_logger.info(f'Идёт запрос по основному API для получения {i}')
+        views_logger.info(f"Идёт запрос по основному API для получения {i}")
         response = requests.get(url, params=payload)
         response_json = json.loads(response.text)
         print(f"Идёт запрос по API для получения {i}\n")
@@ -100,16 +102,16 @@ def get_stock() -> list[dict] | None:
                     "price": response_json["Global Quote"]["05. price"],
                 }
             )
-            views_logger.info(f'{i} получен. {prices[-1]} было добавлено в prices')
+            views_logger.info(f"{i} получен. {prices[-1]} было добавлено в prices")
         else:
-            views_logger.warning('Произошла ошибка при запросе по основному запросу')
+            views_logger.warning("Произошла ошибка при запросе по основному запросу")
             print("При получении данных произошла ошибка. Подключение к резервному API")
             break
-        views_logger.info('Ожидание до след. запроса 5с...')
+        views_logger.info("Ожидание до след. запроса 5с...")
         sleep(5)
-        views_logger.info('Ожидание окончено')
+        views_logger.info("Ожидание окончено")
     else:
-        views_logger.info(f'Возвращается {prices}')
+        views_logger.info(f"Возвращается {prices}")
         return prices
 
     url = "http://api.marketstack.com/v1/eod"
@@ -118,17 +120,17 @@ def get_stock() -> list[dict] | None:
         "symbols": ",".join(stocks),
         "limit": len(stocks),
     }
-    views_logger.info('Попытка запроса по резервному API')
+    views_logger.info("Попытка запроса по резервному API")
     response = requests.get(url, params=payload)
     response_json = json.loads(response.text)
-    if 'data' in response_json:
-        views_logger.info('Данные успешно получены.')
+    if "data" in response_json:
+        views_logger.info("Данные успешно получены.")
         prices = [{"stock": i["symbol"], "price": i["close"]} for i in response_json["data"]]
-        views_logger.info(f'{prices} будет возвращено')
+        views_logger.info(f"{prices} будет возвращено")
         return prices
     else:
-        print('Data not captured.')
-        views_logger.warning(f'Ответ на запрос пришёл с результатом {response_json}. Будет возвращено None')
+        print("Data not captured.")
+        views_logger.warning(f"Ответ на запрос пришёл с результатом {response_json}. Будет возвращено None")
         return None
 
 
