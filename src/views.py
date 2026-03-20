@@ -211,7 +211,6 @@ def get_income_data(data: pd.DataFrame) -> dict:
     return income_info
 
 
-@func_logger(views_logger)
 def events_view(date: str, data: list[dict], *, date_range: str = "M") -> json:
     """
     Окно События. Возвращает JSON с:
