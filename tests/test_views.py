@@ -153,7 +153,7 @@ def test_events_view(transactions_list, date_range, expected):
     v.get_rates = mock_rates
     v.get_stock = mock_stock
     v.get_expenses_data = mock_expenses
-    v.get_income_data = mock_expenses
+    v.get_income_data = mock_income
     res = events_view('20.03.2026', transactions_list, date_range=date_range)
     assert res == ('{"expenses": [], "income": [], "currency_rates": [{"currency": "USD", "rate": 80}], '
                    '"stock_prices": [{"stock": "TEST", "price": 100}, {"stock": "TEST1", "price": 200}]}')
