@@ -58,7 +58,7 @@ def get_rates() -> list[dict] | None:
     """
     base_url = "https://api.apilayer.com/exchangerates_data/latest"
     headers = {"apikey": LAYER_KEY}
-    with open("../user_settings.json", "r", encoding="utf-8") as file:
+    with open("./user_settings.json", "r", encoding="utf-8") as file:
         symbols = ",".join(json.load(file)["user_currencies"])
     payload = {
         "symbols": symbols,
@@ -88,7 +88,7 @@ def get_stock() -> list[dict] | None:
     Возвращает актуальные стоимости акций из S&P500
     """
     # stocks = ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
-    with open("../user_settings.json", "r", encoding="utf-8") as file:
+    with open("./user_settings.json", "r", encoding="utf-8") as file:
         stocks = json.load(file)["user_stocks"]
     prices = []
 
