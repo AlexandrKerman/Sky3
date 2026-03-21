@@ -3,7 +3,9 @@ from functools import wraps
 
 import pandas as pd
 
-from src.loggers import func_logger, reports_logger
+from src.loggers import create_logger, func_logger
+
+reports_logger = create_logger("reports_logger")
 
 
 def save_df_return(filename: str = "report.txt"):
@@ -94,7 +96,7 @@ def weekly_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.Dat
 
 @func_logger(reports_logger)
 @save_df_return()
-def average_spents(transactions: pd.DataFrame, date: str | None) -> pd.DataFrame:
+def average_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.DataFrame:
     """
     Формирует отчёт о средних тратах в выходные и рабочие дни
     """

@@ -2,7 +2,9 @@ import re
 from datetime import datetime
 from venv import logger
 
-from src.loggers import func_logger, services_logger
+from src.loggers import create_logger, func_logger
+
+services_logger = create_logger("services_logger")
 
 
 @func_logger(services_logger)
@@ -14,9 +16,11 @@ def get_cashback_profit(data: list[dict], /, year: int, month: int) -> dict:
     :return: list[dict] of cashback profit by period
     """
     data = [i for i in data if i["Кэшбэк"]]
-    data = [i for i in data if
-            (date := datetime.strptime(i["Дата операции"], "%d.%m.%Y %H:%M:%S")).year == year and date.month == month
-            ]
+    data = [
+        i
+        for i in data
+        if (date := datetime.strptime(i["Дата операции"], "%d.%m.%Y %H:%M:%S")).year == year and date.month == month
+    ]
 
     cashback_categories = {category for i in data if (category := i.get("Категория"))}
     cashback_amount = {i: [] for i in cashback_categories}
@@ -39,18 +43,18 @@ def investment_bank(transactions: list[dict], /, month: str, limit: int, raise_z
     :return: float: sum of investment
     """
     if limit == 0:
-        logger.warning('limit == 0')
+        logger.warning("limit == 0")
         if raise_zero:
-            logger.critical('Raised ValueError, because limit = 0 and raise_zero = True')
+            logger.critical("Raised ValueError, because limit = 0 and raise_zero = True")
             raise ValueError("Expected non-zero value in limit")
         else:
-            logger.warning('Returned 0, because limit = 0 and raise_zero = False')
+            logger.warning("Returned 0, because limit = 0 and raise_zero = False")
             return 0
     month = datetime.strptime(month, "%Y-%m")
     total_amount = 0
-    for i in transactions:
+    for i in [k for k in transactions if k["Сумма операции"] < 0]:
         if datetime.strptime(i["Дата операции"], "%Y-%m-%d") <= month:
-            amount = i["Сумма операции"]
+            amount = abs(i["Сумма операции"])
             total_amount += ((amount + limit - 1) // limit) * limit - amount
     return total_amount
 
