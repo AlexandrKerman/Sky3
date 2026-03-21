@@ -96,7 +96,7 @@ def weekly_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.Dat
 
 @func_logger(reports_logger)
 @save_df_return()
-def average_spents(transactions: pd.DataFrame, date: str | None) -> pd.DataFrame:
+def average_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.DataFrame:
     """
     Формирует отчёт о средних тратах в выходные и рабочие дни
     """
