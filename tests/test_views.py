@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from src import views as v
+from src.views import events_view
 
 
 @pytest.mark.parametrize(
@@ -109,12 +110,12 @@ def test_main_view(transactions_list):
     v.get_stock = mock_stock
     res = v.main_view(date="2025-12-01 22:00:00", data=transactions_list[:2])
     assert (
-        res == '{"greeting": "Добрый вечер", "cards": [{"Номер карты": "4444", "Сумма операции": -2500, '
-        '"Кэшбэк": -25}], "top_transactions": [{"Дата операции": "25.01.2026 09:15:00", '
-        '"Сумма операции": -1500, "Категория": "Супермаркеты", "Описание": "Пятёрочка"}, '
-        '{"Дата операции": "22.01.2026 14:30:00", "Сумма операции": -1000, "Категория": "Переводы", '
-        '"Описание": "Иван Б."}], "currency_rates": [{"currency": "USD", "rate": 80}], '
-        '"stock_prices": [{"stock": "TEST", "price": 100}, {"stock": "TEST1", "price": 200}]}'
+        res == '{"greeting": "Добрый вечер", "cards": [{"Номер карты": "4444", "Сумма операции": -2500.0, '
+               '"Кэшбэк": -25.0}], "top_transactions": [{"Дата операции": "25.01.2026 09:15:00", '
+               '"Сумма операции": -1500.0, "Категория": "Супермаркеты", "Описание": "Пятёрочка"}, '
+               '{"Дата операции": "22.01.2026 14:30:00", "Сумма операции": -1000.0, "Категория": "Переводы", '
+               '"Описание": "Иван Б."}], "currency_rates": [{"currency": "USD", "rate": 80}], '
+               '"stock_prices": [{"stock": "TEST", "price": 100}, {"stock": "TEST1", "price": 200}]}'
     )
 
 
@@ -132,3 +133,31 @@ def test_get_income_data(transactions_list):
     data = pd.DataFrame(transactions_list[:5])
     res = v.get_income_data.__wrapped__(data)
     assert res == {"total_amount": 5000, "main": [{"category": "Пополнения", "amount": 5000}]}
+
+
+@pytest.mark.parametrize('date_range, expected', (
+        ('W', ...),
+        ('M', ...),
+        ('Y', ...),
+        ('ALL', ...)
+))
+def test_events_view(transactions_list, date_range, expected):
+    mock_rates = Mock(
+        return_value=[
+            {"currency": "USD", "rate": 80},
+        ]
+    )
+    mock_stock = Mock(return_value=[{"stock": "TEST", "price": 100}, {"stock": "TEST1", "price": 200}])
+    mock_income = Mock(return_value=[])
+    mock_expenses = Mock(return_value=[])
+    v.get_rates = mock_rates
+    v.get_stock = mock_stock
+    v.get_expenses_data = mock_expenses
+    v.get_income_data = mock_expenses
+    res = events_view('20.03.2026', transactions_list, date_range=date_range)
+    assert res == ('{"expenses": [], "income": [], "currency_rates": [{"currency": "USD", "rate": 80}], '
+                   '"stock_prices": [{"stock": "TEST", "price": 100}, {"stock": "TEST1", "price": 200}]}')
+
+
+
+

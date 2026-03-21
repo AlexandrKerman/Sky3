@@ -8,6 +8,7 @@ import requests
 from dotenv import load_dotenv
 
 from src.loggers import create_logger, func_logger
+from tests.conftest import transactions_list
 
 load_dotenv()
 LAYER_KEY = getenv("LAYER_KEY")
@@ -244,4 +245,4 @@ def events_view(date: str, data: list[dict], *, date_range: str = "M") -> json:
         "stock_prices": get_stock(),
     }
 
-    return json.dumps(json_data, indent=2, ensure_ascii=False)
+    return json.dumps(json_data, ensure_ascii=False)
