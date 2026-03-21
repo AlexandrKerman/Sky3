@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, mock_open
 
 import pandas as pd
 import pytest
@@ -10,17 +10,17 @@ from src.views import events_view
 @pytest.mark.parametrize(
     "hours, expected",
     (
-        (6, "Доброе утро"),
-        (7, "Доброе утро"),
-        (10, "Доброе утро"),
-        (12, "Добрый день"),
-        (13, "Добрый день"),
-        (15, "Добрый день"),
-        (18, "Добрый вечер"),
-        (19, "Добрый вечер"),
-        (23, "Добрый вечер"),
-        (0, "Доброй ночи"),
-        (4, "Доброй ночи"),
+            (6, "Доброе утро"),
+            (7, "Доброе утро"),
+            (10, "Доброе утро"),
+            (12, "Добрый день"),
+            (13, "Добрый день"),
+            (15, "Добрый день"),
+            (18, "Добрый вечер"),
+            (19, "Добрый вечер"),
+            (23, "Добрый вечер"),
+            (0, "Доброй ночи"),
+            (4, "Доброй ночи"),
     ),
 )
 def test_get_greeting(hours, expected):
@@ -73,27 +73,32 @@ def test_get_top_transactions(transactions_list):
 
 def test_get_rates():
     with patch("requests.request") as r_mock:
-        r_mock.return_value.text = '{"rates": {"USD": 0.1, "EUR": 0.2}}'
-        res = v.get_rates.__wrapped__()
-        assert res == [{"currency": "USD", "rate": 10.0}, {"currency": "EUR", "rate": 5.0}]
+        r_mock.return_value.text = '{"rates": {"test1": 0.1, "test2": 0.2}}'
+        mock_json = Mock(return_value={
+            "user_currencies": ['test1', 'test2'],
+            'user_stocks': ['stock1', 'stock2']
+        })
+        with patch('builtins.open', mock_open(read_data='{"user_currencies": ["test1", "test2"], '
+                                                        '"user_stocks": ["stock1", "stock2"]}')):
+            res = v.get_rates.__wrapped__()
+            assert res == [{"currency": "test1", "rate": 10.0}, {"currency": "test2", "rate": 5.0}]
 
 
 def test_get_stock():
     with patch("src.views.sleep"):
         with patch("requests.get") as r_mock:
-            r_mock.return_value.text = '{"Global Quote": {"01. symbol": "TEST", "05. price": 100}}'
-            res = v.get_stock.__wrapped__()
-            assert res == [
-                {"stock": "TEST", "price": 100},
-                {"stock": "TEST", "price": 100},
-                {"stock": "TEST", "price": 100},
-                {"stock": "TEST", "price": 100},
-                {"stock": "TEST", "price": 100},
-            ]
+            with patch('builtins.open', mock_open(read_data='{"user_currencies": ["test1", "test2"], '
+                                                            '"user_stocks": ["stock1", "stock2"]}')):
+                r_mock.return_value.text = '{"Global Quote": {"01. symbol": "TEST", "05. price": 100}}'
+                res = v.get_stock.__wrapped__()
+                assert res == [
+                    {"stock": "TEST", "price": 100},
+                    {"stock": "TEST", "price": 100}
+                ]
 
-            r_mock.return_value.text = '{"data": [{"symbol": "TEST", "close": 100}]}'
-            res = v.get_stock.__wrapped__()
-            assert res == [{"stock": "TEST", "price": 100}]
+                r_mock.return_value.text = '{"data": [{"symbol": "TEST", "close": 100}]}'
+                res = v.get_stock.__wrapped__()
+                assert res == [{"stock": "TEST", "price": 100}]
 
 
 def test_main_view(transactions_list):
@@ -110,12 +115,12 @@ def test_main_view(transactions_list):
     v.get_stock = mock_stock
     res = v.main_view(date="2025-12-01 22:00:00", data=transactions_list[:2])
     assert (
-        res == '{"greeting": "Добрый вечер", "cards": [{"Номер карты": "4444", "Сумма операции": -2500.0, '
-               '"Кэшбэк": -25.0}], "top_transactions": [{"Дата операции": "25.01.2026 09:15:00", '
-               '"Сумма операции": -1500.0, "Категория": "Супермаркеты", "Описание": "Пятёрочка"}, '
-               '{"Дата операции": "22.01.2026 14:30:00", "Сумма операции": -1000.0, "Категория": "Переводы", '
-               '"Описание": "Иван Б."}], "currency_rates": [{"currency": "USD", "rate": 80}], '
-               '"stock_prices": [{"stock": "TEST", "price": 100}, {"stock": "TEST1", "price": 200}]}'
+            res == '{"greeting": "Добрый вечер", "cards": [{"Номер карты": "4444", "Сумма операции": -2500.0, '
+                   '"Кэшбэк": -25.0}], "top_transactions": [{"Дата операции": "25.01.2026 09:15:00", '
+                   '"Сумма операции": -1500.0, "Категория": "Супермаркеты", "Описание": "Пятёрочка"}, '
+                   '{"Дата операции": "22.01.2026 14:30:00", "Сумма операции": -1000.0, "Категория": "Переводы", '
+                   '"Описание": "Иван Б."}], "currency_rates": [{"currency": "USD", "rate": 80}], '
+                   '"stock_prices": [{"stock": "TEST", "price": 100}, {"stock": "TEST1", "price": 200}]}'
     )
 
 
@@ -157,7 +162,3 @@ def test_events_view(transactions_list, date_range, expected):
     res = events_view('20.03.2026', transactions_list, date_range=date_range)
     assert res == ('{"expenses": [], "income": [], "currency_rates": [{"currency": "USD", "rate": 80}], '
                    '"stock_prices": [{"stock": "TEST", "price": 100}, {"stock": "TEST1", "price": 200}]}')
-
-
-
-
