@@ -1,6 +1,3 @@
-from trace import Trace
-from unittest.mock import patch
-
 import pytest
 
 
