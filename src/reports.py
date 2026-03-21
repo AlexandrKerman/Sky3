@@ -1,5 +1,7 @@
 import datetime
+import json
 from functools import wraps
+from typing import Union
 
 import pandas as pd
 
@@ -15,8 +17,11 @@ def save_df_return(filename: str = "report.txt"):
         @wraps(func)
         def inner(*args, **kwargs):
             res = func(*args, **kwargs)
-            with open(f"{func.__name__} - {filename}", "w", encoding="utf-8") as file:
-                file.write(res.to_string())
+            with open(f"../{func.__name__} - {filename}", "w", encoding="utf-8") as file:
+                if isinstance(res, pd.DataFrame):
+                    file.write(res.to_string())
+                else:
+                    file.write(res)
             return res
 
         return inner
@@ -51,7 +56,9 @@ def get_expenses(transactions: pd.DataFrame) -> pd.DataFrame:
 
 @func_logger(reports_logger)
 @save_df_return()
-def category_spents(transactions: pd.DataFrame, category_name: str, date: str | None = None) -> pd.DataFrame:
+def category_spents(
+    transactions: pd.DataFrame, category_name: str, date: str | None = None, save_as_json: bool = True
+) -> Union[json, pd.DataFrame]:
     """
     Формирует отчёт по затратам по категории
     """
@@ -61,13 +68,17 @@ def category_spents(transactions: pd.DataFrame, category_name: str, date: str | 
     df = get_expenses(df)
     df = df[df["Категория"] == category_name]
     df["Сумма операции"] = df["Сумма операции"].round(2)
-
+    if save_as_json:
+        df["Дата операции"] = df["Дата операции"].dt.strftime("%d.%m.%Y %H:%M:%S")
+        return json.dumps(df.to_dict(), ensure_ascii=False)
     return df
 
 
 @func_logger(reports_logger)
 @save_df_return()
-def weekly_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.DataFrame:
+def weekly_spents(
+    transactions: pd.DataFrame, date: str | None = None, save_as_json: bool = True
+) -> Union[json, pd.DataFrame]:
     """
     Формирует отчёт о тратах по дням недели
     """
@@ -91,12 +102,16 @@ def weekly_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.Dat
     grouped_df.reset_index(inplace=True)
     grouped_df["Сумма операции"] = grouped_df["Сумма операции"].round(2)
 
+    if save_as_json:
+        return json.dumps(grouped_df.to_dict(), ensure_ascii=False)
     return grouped_df
 
 
 @func_logger(reports_logger)
 @save_df_return()
-def average_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.DataFrame:
+def average_spents(
+    transactions: pd.DataFrame, date: str | None = None, save_as_json: bool = True
+) -> Union[json, pd.DataFrame]:
     """
     Формирует отчёт о средних тратах в выходные и рабочие дни
     """
@@ -111,4 +126,6 @@ def average_spents(transactions: pd.DataFrame, date: str | None = None) -> pd.Da
     grouped_df.reset_index(inplace=True)
     grouped_df["Сумма операции"] = grouped_df["Сумма операции"].round(2)
 
+    if save_as_json:
+        return json.dumps(grouped_df.to_dict(), ensure_ascii=False)
     return grouped_df

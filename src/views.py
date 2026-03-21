@@ -8,7 +8,6 @@ import requests
 from dotenv import load_dotenv
 
 from src.loggers import create_logger, func_logger
-from tests.conftest import transactions_list
 
 load_dotenv()
 LAYER_KEY = getenv("LAYER_KEY")
@@ -59,8 +58,8 @@ def get_rates() -> list[dict] | None:
     """
     base_url = "https://api.apilayer.com/exchangerates_data/latest"
     headers = {"apikey": LAYER_KEY}
-    with open('../user_settings.json', 'r', encoding='utf-8') as file:
-        symbols = ','.join(json.load(file)['user_currencies'])
+    with open("../user_settings.json", "r", encoding="utf-8") as file:
+        symbols = ",".join(json.load(file)["user_currencies"])
     payload = {
         "symbols": symbols,
         "base": "RUB",
@@ -89,8 +88,8 @@ def get_stock() -> list[dict] | None:
     Возвращает актуальные стоимости акций из S&P500
     """
     # stocks = ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
-    with open('../user_settings.json', 'r', encoding='utf-8') as file:
-        stocks = json.load(file)['user_stocks']
+    with open("../user_settings.json", "r", encoding="utf-8") as file:
+        stocks = json.load(file)["user_stocks"]
     prices = []
 
     url = "https://www.alphavantage.co/query"
