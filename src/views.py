@@ -58,8 +58,10 @@ def get_rates() -> list[dict] | None:
     """
     base_url = "https://api.apilayer.com/exchangerates_data/latest"
     headers = {"apikey": LAYER_KEY}
+    with open("./user_settings.json", "r", encoding="utf-8") as file:
+        symbols = ",".join(json.load(file)["user_currencies"])
     payload = {
-        "symbols": "USD,EUR",
+        "symbols": symbols,
         "base": "RUB",
     }
     try:
@@ -85,7 +87,9 @@ def get_stock() -> list[dict] | None:
     """
     Возвращает актуальные стоимости акций из S&P500
     """
-    stocks = ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
+    # stocks = ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
+    with open("./user_settings.json", "r", encoding="utf-8") as file:
+        stocks = json.load(file)["user_stocks"]
     prices = []
 
     url = "https://www.alphavantage.co/query"
@@ -244,4 +248,4 @@ def events_view(date: str, data: list[dict], *, date_range: str = "M") -> json:
         "stock_prices": get_stock(),
     }
 
-    return json.dumps(json_data, indent=2, ensure_ascii=False)
+    return json.dumps(json_data, ensure_ascii=False)

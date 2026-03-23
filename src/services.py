@@ -53,10 +53,10 @@ def investment_bank(transactions: list[dict], /, month: str, limit: int, raise_z
     month = datetime.strptime(month, "%Y-%m")
     total_amount = 0
     for i in [k for k in transactions if k["Сумма операции"] < 0]:
-        if datetime.strptime(i["Дата операции"], "%Y-%m-%d") <= month:
+        if datetime.strptime(i["Дата операции"], "%d.%m.%Y %H:%M:%S") <= month:
             amount = abs(i["Сумма операции"])
             total_amount += ((amount + limit - 1) // limit) * limit - amount
-    return total_amount
+    return round(total_amount, 2)
 
 
 @func_logger(services_logger)
